@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>んぽちゃむ度診断</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: #f0f8ff;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    #dots {
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      min-height: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #dde8f4;
+      transition: background 0.3s;
+    }
+
+    .dot.done { background: #5DCAA5; }
+    .dot.active { background: #9FE1CB; }
+
+    #scr { transition: opacity 0.25s; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #ddeef8;
+      border-radius: 18px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .opt-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #ddeef8;
+      border-radius: 12px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 9px;
+    }
+
+    .opt-btn:hover {
+      background: #e8f6f2;
+      border-color: #9FE1CB;
+    }
+
+    .abcd {
+      min-width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #9FE1CB;
+      color: #085041;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .start-btn {
+      padding: 14px 48px;
+      border-radius: 14px;
+      background: #9FE1CB;
+      border: 1.5px solid #5DCAA5;
+      color: #085041;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .start-btn:hover { background: #7dd4ba; }
+
+    .retry-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #ddeef8;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+
+    .retry-btn:hover { background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="dots"></div>
+    <div id="scr"></div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // 質問データ
+      const QUESTIONS = [
+        { q: "欲しい車を買いに行ったら、お金が足りなかった。どうする？", o: [
+          { t: "諦めてお金を貯めてからまた来るちゃむ", p: 0 },
+          { t: "マカローンで払えないか交渉するちゃむ", p: 1 },
+          { t: "もっと安い車を探すちゃむ", p: 2 },
+          { t: "そのまま車を盗んで逃げるちゃむ", p: 3 }
+        ]},
+        { q: "UFOキャッチャーで欲しいぬいぐるみが取れない。どうする？", o: [
+          { t: "練習してコツを掴むちゃむ", p: 0 },
+          { t: "店員さんに取り方を聞くちゃむ", p: 1 },
+          { t: "課金しまくって意地でも取るちゃむ", p: 2 },
+          { t: "他の人がとったぬいぐるみを強奪しようとするちゃむ", p: 3 }
+        ]},
+        { q: "ピクニックの日に大雨になったら？", o: [
+          { t: "事前に天気予報を確認して日程を変えるちゃむ", p: 0 },
+          { t: "家でポテチ食べながらゴロゴロするちゃむ", p: 1 },
+          { t: "雨宿りしながら楽しむちゃむ", p: 2 },
+          { t: "ずぶ濡れのままピクニックを続けるちゃむ", p: 3 }
+        ]},
+        { q: "料理をしようとした結果は？", o: [
+          { t: "レシピ通りに美味しく作れたちゃむ", p: 0 },
+          { t: "なんか焦げたけど食べられたちゃむ", p: 1 },
+          { t: "鍋を火にかけたまま寝てしまい、起きたら煙が充満してたちゃむ", p: 2 },
+          { t: "火事になり、家が全焼してしまったちゃむ", p: 3 }
+        ]},
+        { q: "大事なものを失くした。どうする？", o: [
+          { t: "置いた場所をメモしてるちゃむ", p: 0 },
+          { t: "少し探せば見つかるちゃむ", p: 1 },
+          { t: "失くしたことを失くしたちゃむ", p: 2 },
+          { t: "きみまろが管理しているちゃむ", p: 3 }
+        ]},
+        { q: "電車に乗ったら？", o: [
+          { t: "目的地まで一直線ちゃむ", p: 0 },
+          { t: "1回だけ乗り間違えたちゃむ", p: 1 },
+          { t: "気づいたら逆方向ちゃむ", p: 2 },
+          { t: "乗り換え13回してたちゃむ", p: 3 }
+        ]},
+        { q: "重要な仕事を任されたとき、どうする？", o: [
+          { t: "責任感を持って全力で取り組むちゃむ", p: 0 },
+          { t: "なんとかやりきるちゃむ", p: 1 },
+          { t: "途中で飽きてゲームをはじめるちゃむ", p: 2 },
+          { t: "きみまろがなんとかしてくれるちゃむ", p: 3 }
+        ]},
+        { q: "試験勉強のやり方は？", o: [
+          { t: "計画を立ててコツコツやるちゃむ", p: 0 },
+          { t: "前日に頑張るちゃむ", p: 1 },
+          { t: "当日の朝に気づくちゃむ", p: 2 },
+          { t: "試験ってどういう意味ちゃむ？", p: 3 }
+        ]},
+        { q: "お店でお釣りをもらいすぎたときどうする？", o: [
+          { t: "すぐ店員さんに返すちゃむ", p: 0 },
+          { t: "少し悩んでから返すちゃむ", p: 1 },
+          { t: "気づかなかったことにするちゃむ", p: 2 },
+          { t: "通貨はマカロンだから買い物できないちゃむ", p: 3 }
+        ]},
+        { q: "失敗したとき、どう立ち直る？", o: [
+          { t: "原因を分析して次に活かすちゃむ", p: 0 },
+          { t: "少し落ち込んで切り替えるちゃむ", p: 1 },
+          { t: "失敗したこと自体を忘れるちゃむ", p: 2 },
+          { t: "失敗なんてしたことないちゃむ", p: 3 }
+        ]},
+        { q: "道端で財布を拾ったら？", o: [
+          { t: "すぐ警察に届けるちゃむ", p: 0 },
+          { t: "中身を確認して持ち主を探すちゃむ", p: 1 },
+          { t: "とりあえずポケットに入れて忘れるちゃむ", p: 2 },
+          { t: "そのままネコババするちゃむ", p: 3 }
+        ]},
+        { q: "道に迷ったときは？", o: [
+          { t: "地図アプリで調べるちゃむ", p: 0 },
+          { t: "近くの人に聞くちゃむ", p: 1 },
+          { t: "とりあえず歩き続けるちゃむ", p: 2 },
+          { t: "きみまろが迎えに来てくれるちゃむ", p: 3 }
+        ]},
+        { q: "部屋がゴミだらけになったら？", o: [
+          { t: "計画を立てて片づけるちゃむ", p: 0 },
+          { t: "気が向いたときに片づけるちゃむ", p: 1 },
+          { t: "新しい部屋に引っ越すちゃむ", p: 3 },
+          { t: "きみまろが片づけてくれるちゃむ", p: 3 }
+        ]},
+        { q: "お金がなくなったときは？", o: [
+          { t: "節約して貯めるちゃむ", p: 0 },
+          { t: "バイトを探すちゃむ", p: 1 },
+          { t: "きみまろからお金を借りるちゃむ", p: 3 },
+          { t: "きみまろのクレカをつかうちゃむ", p: 3 }
+        ]},
+        { q: "自動車免許の試験に何回やっても合格できないときは？", o: [
+          { t: "諦めずに勉強して次こそ合格するちゃむ", p: 0 },
+          { t: "教官に弱点を聞いて練習するちゃむ", p: 1 },
+          { t: "きみまろに運転してもらうからあきらめるちゃむ", p: 3 },
+          { t: "自動車学校の社長に偽造免許つくってもらうちゃむ", p: 3 }
+        ]}
+      ];
+
+      // 診断結果レベル
+      const LEVELS = [
+        { min: 0, max: 9, label: "きみまろ度100%", color: "#B5D4F4", tc: "#0C447C", comment: "完全にきみまろタイプちゃむ！クールで頼れる存在で、んぽちゃむがいても冷静に対処できるちゃむ。あなたの周りのんぽちゃむたちを守ってあげてほしいちゃむ。" },
+        { min: 10, max: 18, label: "んぽちゃむ10%", color: "#EAF3DE", tc: "#27500A", comment: "ほぼしっかり者ちゃむ！たまにのんびりすることはあるけど、基本的には地に足のついたタイプちゃむ。んぽちゃむ成分は少量にとどまってるちゃむ。" },
+        { min: 19, max: 27, label: "んぽちゃむ30%", color: "#FAEEDA", tc: "#633806", comment: "ちょっぴりんぽちゃむ成分あり！天然なところが出るときもあるけど、それが逆に愛されポイントちゃむ。きみまろがいれば大丈夫ちゃむ。" },
+        { min: 28, max: 35, label: "んぽちゃむ60%", color: "#F4C0D1", tc: "#7D2A4A", comment: "かなりんぽちゃむ成分高めちゃむ！マイペースでポジティブ、悪意なく周りを巻き込んでしまうタイプちゃむ。でもそれが愛されてる理由でもあるちゃむ！" },
+        { min: 36, max: 41, label: "んぽちゃむ90%", color: "#CECBF6", tc: "#3C3489", comment: "ほぼんぽちゃむちゃむ！自由奔放で天真爛漫、周りはきみまろ化してるはずちゃむ。偽造免許を作ろうとしてないか確認するちゃむ……。" },
+        { min: 42, max: 45, label: "んぽちゃむ100%", color: "#9FE1CB", tc: "#04342C", comment: "んぽちゃむそのものちゃむ！！おめでとうちゃむ！！！免許は偽造するし、きみまろに全部やってもらうし、カーディーラーから車を盗むし……きみまろよ、本当にありがとうちゃむ……。" }
+      ];
+
+      // 状態
+      let step = -1;
+      let total = 0;
+      const MAX = QUESTIONS.length * 3;
+
+      // DOM要素
+      const $dots = document.getElementById('dots');
+      const $scr = document.getElementById('scr');
+
+      // 画像パス（外部ファイル）
+      const NPOIMG = "npochamu.jpg";
+
+      // ユーティリティ関数
+      const npochamu = (w, h) => `<img src="${NPOIMG}" width="${w}" height="${h}" style="object-fit:contain" alt="んぽちゃむ" />`;
+
+      const updateDots = () => {
+        $dots.innerHTML = '';
+        if (step < 0) return;
+
+        QUESTIONS.forEach((_, i) => {
+          const dot = document.createElement('div');
+          dot.className = 'dot' + (i < step ? ' done' : i === step ? ' active' : '');
+          $dots.appendChild(dot);
+        });
+      };
+
+      const fade = (callback) => {
+        $scr.style.opacity = '0';
+        setTimeout(() => {
+          callback();
+          $scr.style.opacity = '1';
+        }, 200);
+      };
+
+      // 画面表示関数
+      const showIntro = () => {
+        step = -1;
+        total = 0;
+        updateDots();
+
+        fade(() => {
+          $scr.innerHTML = `
+            <div style="text-align:center;padding:1rem 0 1.75rem">
+              <div style="margin-bottom:0.75rem">${npochamu(110, 132)}</div>
+              <h1 style="font-size:22px;font-weight:700;color:#333;margin-bottom:0.4rem">んぽちゃむ度診断</h1>
+              <p style="font-size:13px;color:#85BFAE;font-weight:600;letter-spacing:0.08em;margin-bottom:1rem">— ヨーグルトの妖精診断 —</p>
+              <p style="font-size:14px;color:#888;line-height:1.8;margin-bottom:1.75rem">
+                15の質問に答えて、あなたの<br><b style="color:#5DCAA5">んぽちゃむ成分</b>を測定するちゃむ！
+              </p>
+              <button class="start-btn" id="startBtn">はじめるちゃむ！</button>
+            </div>
+          `;
+          document.getElementById('startBtn').addEventListener('click', startQuiz);
+        });
+      };
+
+      const startQuiz = () => {
+        step = 0;
+        total = 0;
+        renderQuestion();
+      };
+
+      const renderQuestion = () => {
+        updateDots();
+        const q = QUESTIONS[step];
+
+        fade(() => {
+          const optionsHtml = q.o.map((opt, i) => `
+            <button class="opt-btn" data-points="${opt.p}">
+              <span class="abcd">${'ABCD'[i]}</span>${opt.t}
+            </button>
+          `).join('');
+
+          $scr.innerHTML = `
+            <div style="text-align:center;margin-bottom:0.75rem">
+              <span style="font-size:12px;color:#aaa">${step + 1} / ${QUESTIONS.length}</span>
+            </div>
+            <div class="card" style="text-align:center">
+              <p style="font-size:16px;font-weight:600;color:#444;line-height:1.7;margin:0">${q.q}</p>
+            </div>
+            ${optionsHtml}
+          `;
+
+          // イベントリスナーを追加
+          document.querySelectorAll('.opt-btn').forEach(btn => {
+            btn.addEventListener('click', () => answer(parseInt(btn.dataset.points)));
+          });
+        });
+      };
+
+      const answer = (points) => {
+        total += points;
+        step++;
+        if (step >= QUESTIONS.length) {
+          showResult();
+        } else {
+          renderQuestion();
+        }
+      };
+
+      const showResult = () => {
+        const level = LEVELS.find(lv => total >= lv.min && total <= lv.max) || LEVELS[0];
+        const pct = Math.round(total / MAX * 100);
+        const barW = Math.max(2, pct);
+
+        $dots.innerHTML = '';
+
+        fade(() => {
+          $scr.innerHTML = `
+            <div style="text-align:center;padding-top:0.5rem;margin-bottom:1.25rem">
+              <p style="font-size:12px;color:#aaa;margin-bottom:0.5rem;letter-spacing:0.1em">診断結果</p>
+              <div style="margin:0 auto 0.75rem;display:inline-block">${npochamu(150, 150)}</div>
+              <p style="font-size:36px;font-weight:800;color:${level.tc};margin-bottom:0.25rem">${pct}%</p>
+              <span style="display:inline-block;background:${level.color};color:${level.tc};font-size:14px;font-weight:700;padding:6px 18px;border-radius:10px">${level.label}</span>
+            </div>
+            <div style="background:#fff;border:1px solid #ddeef8;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:#5DCAA5;font-weight:600">きみまろ</span>
+                <span style="font-size:12px;color:#d4537e;font-weight:600">んぽちゃむ</span>
+              </div>
+              <div style="height:12px;background:#eef5f0;border-radius:6px;overflow:hidden;margin-bottom:12px">
+                <div style="height:100%;width:${barW}%;background:linear-gradient(90deg,#9FE1CB,#d4537e);border-radius:6px;transition:width 0.8s ease"></div>
+              </div>
+              <p style="font-size:14px;color:#555;line-height:1.8;margin:0">${level.comment}</p>
+            </div>
+            <button class="retry-btn" id="retryBtn">もう一度測定するちゃむ</button>
+          `;
+          document.getElementById('retryBtn').addEventListener('click', showIntro);
+        });
+      };
+
+      // 初期化
+      showIntro();
+    })();
+  </script>
+</body>
+</html>
