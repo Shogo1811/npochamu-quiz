@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ちいかわキャラ診断</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;background:#fff5f5;color:#333;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+#app{width:100%;max-width:480px}
+#dots{display:flex;gap:7px;justify-content:center;margin-bottom:1.5rem;min-height:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:#ffe0e0;transition:background 0.3s}
+.dot.done{background:#ff9999}
+.dot.active{background:#ffcccc}
+#scr{transition:opacity 0.25s}
+.card{background:#fff;border:1px solid #ffe0e0;border-radius:18px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(255,150,150,0.1)}
+.opt-btn{width:100%;text-align:left;padding:12px 16px;background:#fff;border:1px solid #ffe0e0;border-radius:12px;font-size:14px;color:#333;cursor:pointer;transition:all 0.15s;font-family:inherit;display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.opt-btn:hover{background:#fff0f0;border-color:#ff9999}
+.abcd{min-width:26px;height:26px;border-radius:50%;background:#ffcccc;color:#663333;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.start-btn{padding:14px 48px;border-radius:14px;background:#ffcccc;border:1.5px solid #ff9999;color:#663333;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.2s}
+.start-btn:hover{background:#ffb3b3}
+.retry-btn{width:100%;padding:12px;border-radius:12px;background:#fff;border:1px solid #ffe0e0;font-size:13px;color:#888;cursor:pointer;font-family:inherit;transition:background 0.2s;margin-top:4px}
+.retry-btn:hover{background:#fff5f5}
+h2{font-size:18px;color:#663333;margin-bottom:1rem;text-align:center}
+.q-text{font-size:15px;line-height:1.6;margin-bottom:1.2rem}
+.result-title{font-size:22px;color:#ff6666;text-align:center;margin-bottom:0.5rem}
+.result-char{font-size:48px;text-align:center;margin:1rem 0}
+.result-name{font-size:24px;color:#663333;text-align:center;font-weight:bold;margin-bottom:1rem}
+.result-desc{font-size:14px;line-height:1.8;color:#555;margin-bottom:1rem}
+.result-traits{background:#fff5f5;border-radius:12px;padding:1rem;margin-bottom:1rem}
+.result-traits h3{font-size:14px;color:#ff6666;margin-bottom:0.5rem}
+.result-traits ul{font-size:13px;line-height:1.8;padding-left:1.2rem;color:#666}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="dots"></div>
+  <div id="scr"></div>
+</div>
+<script>
+/* キャラクター: ちいかわ, ハチワレ, うさぎ, ももんが, シーサー, ラッコ, くりまんじゅう */
+/* 各選択肢にキャラクターポイントを設定 */
+/* c=ちいかわ, h=ハチワレ, u=うさぎ, m=ももんが, s=シーサー, r=ラッコ, k=くりまんじゅう */
+
+var Q=[
+  {q:"友達と遊ぶ約束の日、急に雨が降ってきた。どうする？",o:[
+    {t:"ちょっと不安になりながらも、とりあえず待ち合わせ場所に行く",c:3,h:1,u:0,m:2,s:0,r:1,k:1},
+    {t:"「雨だけど大丈夫？」と連絡して、予定を調整する",c:1,h:3,u:0,m:1,s:2,r:1,k:1},
+    {t:"雨なんて関係ない！むしろテンション上がる！",c:0,h:1,u:3,m:0,s:1,r:0,k:0},
+    {t:"家でのんびり過ごすことにする",c:1,h:0,u:0,m:1,s:1,r:1,k:3},
+    {t:"雨の音を聞きながら、カフェで読書でもしようかな",c:0,h:1,u:0,m:0,s:0,r:3,k:1}
+  ]},
+  {q:"美味しそうなお店を見つけた。どうする？",o:[
+    {t:"入りたいけど、一人だとちょっと勇気がいる...",c:3,h:1,u:0,m:2,s:0,r:1,k:0},
+    {t:"「ここ美味しそう！一緒に行こう！」と誰かを誘う",c:1,h:3,u:1,m:1,s:2,r:1,k:1},
+    {t:"迷わず入店！美味しいものは逃さない！",c:0,h:1,u:3,m:0,s:1,r:1,k:2},
+    {t:"とりあえず様子を見て、また今度にする",c:1,h:0,u:0,m:1,s:1,r:0,k:3},
+    {t:"口コミや評判を調べてから、じっくり吟味して決める",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]},
+  {q:"怖い夢を見て起きた。どうする？",o:[
+    {t:"布団にくるまって、しばらく動けない...",c:3,h:1,u:0,m:3,s:0,r:0,k:1},
+    {t:"誰かに話を聞いてもらいたくなる",c:1,h:3,u:0,m:1,s:1,r:1,k:0},
+    {t:"すぐ忘れて二度寝する",c:0,h:0,u:3,m:0,s:1,r:0,k:3},
+    {t:"気合いで起きて、体を動かす",c:0,h:1,u:1,m:0,s:3,r:0,k:0},
+    {t:"温かい飲み物を淹れて、気持ちを落ち着かせる",c:0,h:1,u:0,m:0,s:0,r:3,k:1}
+  ]},
+  {q:"新しいことに挑戦するとき、あなたは？",o:[
+    {t:"不安だけど、頑張ってやってみる",c:3,h:2,u:0,m:2,s:1,r:0,k:0},
+    {t:"まず情報を集めて、計画を立てる",c:1,h:3,u:0,m:1,s:2,r:1,k:1},
+    {t:"考えるより先に体が動いちゃう",c:0,h:0,u:3,m:0,s:2,r:0,k:0},
+    {t:"誰かがやってるのを見てから決める",c:1,h:1,u:0,m:2,s:0,r:0,k:3},
+    {t:"本や資料でしっかり勉強してから取り組む",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]},
+  {q:"友達が落ち込んでいるとき、どうする？",o:[
+    {t:"自分も心配になって、一緒にしょんぼりしちゃう",c:3,h:1,u:0,m:2,s:0,r:0,k:1},
+    {t:"話を聞いて、一緒に解決策を考える",c:1,h:3,u:0,m:1,s:2,r:1,k:1},
+    {t:"とにかく楽しいことで気を紛らわせる！",c:0,h:1,u:3,m:0,s:1,r:0,k:0},
+    {t:"そっと見守って、落ち着くのを待つ",c:1,h:0,u:0,m:1,s:1,r:1,k:3},
+    {t:"美味しいものを差し入れして、静かに寄り添う",c:0,h:1,u:0,m:0,s:0,r:3,k:1}
+  ]},
+  {q:"欲しいものがあるけど、ちょっと高い。どうする？",o:[
+    {t:"悩んで悩んで、結局買えないことが多い",c:3,h:1,u:0,m:2,s:0,r:0,k:1},
+    {t:"計画的に貯金して、目標達成を目指す",c:1,h:3,u:0,m:1,s:2,r:1,k:2},
+    {t:"欲しい！と思ったら即購入！",c:0,h:0,u:3,m:0,s:1,r:0,k:0},
+    {t:"本当に必要か冷静に考えて判断する",c:0,h:2,u:0,m:1,s:2,r:1,k:3},
+    {t:"品質や素材を調べて、納得できたら投資する",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]},
+  {q:"自分の長所は？",o:[
+    {t:"素直で、一生懸命なところ",c:3,h:2,u:0,m:2,s:1,r:0,k:0},
+    {t:"周りへの気配りができるところ",c:1,h:3,u:0,m:1,s:2,r:1,k:1},
+    {t:"いつも元気で、行動力があるところ",c:0,h:1,u:3,m:0,s:2,r:0,k:0},
+    {t:"マイペースで、どっしり構えているところ",c:0,h:0,u:0,m:1,s:1,r:1,k:3},
+    {t:"物知りで、落ち着いて判断できるところ",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]},
+  {q:"休日の過ごし方は？",o:[
+    {t:"家でのんびり、好きなことをする",c:3,h:1,u:0,m:2,s:0,r:1,k:3},
+    {t:"友達と出かけて、いろいろ楽しむ",c:1,h:3,u:2,m:1,s:2,r:0,k:0},
+    {t:"じっとしてられない！アクティブに動き回る",c:0,h:1,u:3,m:0,s:2,r:0,k:0},
+    {t:"スキルアップのための勉強や練習",c:1,h:2,u:0,m:1,s:3,r:1,k:1},
+    {t:"気になるお店で美味しいものを堪能する",c:0,h:1,u:0,m:0,s:0,r:3,k:1}
+  ]},
+  {q:"ピンチの時、あなたは？",o:[
+    {t:"パニックになりがちだけど、最後は頑張れる",c:3,h:1,u:0,m:2,s:0,r:0,k:0},
+    {t:"冷静に状況を分析して対処する",c:0,h:3,u:0,m:1,s:2,r:2,k:2},
+    {t:"なんとかなる精神で乗り切る！",c:0,h:0,u:3,m:0,s:2,r:0,k:1},
+    {t:"動じない。いつも通りでいる",c:0,h:1,u:0,m:0,s:1,r:1,k:3},
+    {t:"一度落ち着いて、情報を整理してから動く",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]},
+  {q:"グループの中での自分の立ち位置は？",o:[
+    {t:"控えめだけど、みんなについていく",c:3,h:1,u:0,m:3,s:0,r:0,k:1},
+    {t:"みんなをまとめたり、サポートしたりする",c:1,h:3,u:0,m:0,s:2,r:1,k:1},
+    {t:"ムードメーカー！場を盛り上げる",c:0,h:1,u:3,m:0,s:1,r:0,k:0},
+    {t:"マイペースに自分のことをしている",c:0,h:0,u:0,m:1,s:1,r:1,k:3},
+    {t:"知識や情報を提供する参謀役",c:0,h:1,u:0,m:0,s:1,r:3,k:0}
+  ]}
+];
+
+/* キャラクター結果データ */
+var CHARS={
+  c:{
+    name:"ちいかわ",
+    emoji:"🐹",
+    desc:"あなたはちいかわタイプ！小さくてかわいい存在で、ちょっと臆病だけど、いざという時は勇気を出して頑張れる心の強さを持っています。素直で一生懸命な性格が周りの人を惹きつけます。",
+    traits:["素直で純粋な心","頑張り屋さん","ちょっと泣き虫","友達思い","小さな幸せを大切にする"]
+  },
+  h:{
+    name:"ハチワレ",
+    emoji:"🐱",
+    desc:"あなたはハチワレタイプ！明るくて社交的、困っている人を見ると放っておけない優しさの持ち主。話し上手で、みんなの相談役になることも多いはず。ポジティブな性格で、周りを元気にする力があります。",
+    traits:["コミュニケーション上手","面倒見がいい","ポジティブ思考","好奇心旺盛","友達が多い"]
+  },
+  u:{
+    name:"うさぎ",
+    emoji:"🐰",
+    desc:"あなたはうさぎタイプ！とにかく元気いっぱい、自由奔放でマイペース。細かいことは気にしない、その行動力とパワフルさで周りを巻き込んでいきます。独特のセンスと感性の持ち主です。",
+    traits:["超マイペース","行動力抜群","自由奔放","独特の感性","エネルギッシュ"]
+  },
+  m:{
+    name:"ももんが",
+    emoji:"🐿️",
+    desc:"あなたはももんがタイプ！控えめで大人しいけど、実は芯が強い。甘えん坊な一面もあり、信頼できる人には心を開きます。のんびりしているように見えて、しっかり観察している頭の良さがあります。",
+    traits:["控えめで大人しい","甘えん坊","実は芯が強い","観察力がある","のんびり屋"]
+  },
+  s:{
+    name:"シーサー",
+    emoji:"🦁",
+    desc:"あなたはシーサータイプ！真面目で努力家、目標に向かって頑張れる強い意志の持ち主。ちょっと不器用なところもあるけど、その一生懸命さが魅力。頼りになる存在として周りから信頼されています。",
+    traits:["真面目で努力家","責任感が強い","目標達成への執念","ちょっと不器用","頼りになる"]
+  },
+  r:{
+    name:"ラッコ",
+    emoji:"🦦",
+    desc:"あなたはラッコタイプ！穏やかで知的、物事を冷静に見ることができます。美味しいものが大好きで、食へのこだわりが強いかも。落ち着いた雰囲気で、一緒にいると安心感を与える存在です。",
+    traits:["穏やかで冷静","知的で物知り","グルメ・食通","落ち着いた雰囲気","癒し系"]
+  },
+  k:{
+    name:"くりまんじゅう",
+    emoji:"🌰",
+    desc:"あなたはくりまんじゅうタイプ！超マイペースで動じない、どっしりとした安定感の持ち主。多くを語らないけど、存在感がある。食べることと寝ることが大好きで、のんびりした時間を大切にします。",
+    traits:["超マイペース","動じない心","のんびり屋","寡黙だけど存在感","食べること・寝ること大好き"]
+  }
+};
+
+var idx=0,scores={c:0,h:0,u:0,m:0,s:0,r:0,k:0};
+
+function dots(){
+  var d=document.getElementById('dots');
+  d.innerHTML='';
+  for(var i=0;i<Q.length;i++){
+    var span=document.createElement('span');
+    span.className='dot'+(i<idx?' done':'')+(i===idx?' active':'');
+    d.appendChild(span);
+  }
+}
+
+function start(){
+  idx=0;
+  scores={c:0,h:0,u:0,m:0,s:0,r:0,k:0};
+  show();
+}
+
+function show(){
+  dots();
+  var s=document.getElementById('scr');
+  if(idx>=Q.length){result();return;}
+  var q=Q[idx];
+  var html='<div class="card"><h2>Q'+(idx+1)+' / '+Q.length+'</h2><p class="q-text">'+q.q+'</p>';
+  var labels=['A','B','C','D','E'];
+  for(var i=0;i<q.o.length;i++){
+    html+='<button class="opt-btn" onclick="answer('+i+')"><span class="abcd">'+labels[i]+'</span><span>'+q.o[i].t+'</span></button>';
+  }
+  html+='</div>';
+  s.innerHTML=html;
+}
+
+function answer(i){
+  var o=Q[idx].o[i];
+  scores.c+=o.c||0;
+  scores.h+=o.h||0;
+  scores.u+=o.u||0;
+  scores.m+=o.m||0;
+  scores.s+=o.s||0;
+  scores.r+=o.r||0;
+  scores.k+=o.k||0;
+  idx++;
+  show();
+}
+
+function result(){
+  dots();
+  var maxKey='c',maxVal=scores.c;
+  for(var key in scores){
+    if(scores[key]>maxVal){
+      maxVal=scores[key];
+      maxKey=key;
+    }
+  }
+  var ch=CHARS[maxKey];
+  var s=document.getElementById('scr');
+  var html='<div class="card">';
+  html+='<p class="result-title">あなたは...</p>';
+  html+='<div class="result-char">'+ch.emoji+'</div>';
+  html+='<p class="result-name">'+ch.name+'</p>';
+  html+='<p class="result-desc">'+ch.desc+'</p>';
+  html+='<div class="result-traits"><h3>あなたの特徴</h3><ul>';
+  for(var i=0;i<ch.traits.length;i++){
+    html+='<li>'+ch.traits[i]+'</li>';
+  }
+  html+='</ul></div>';
+  html+='<button class="retry-btn" onclick="start()">もう一度診断する</button>';
+  html+='</div>';
+  s.innerHTML=html;
+}
+
+/* 初期画面 */
+document.getElementById('scr').innerHTML='<div class="card" style="text-align:center"><h2 style="font-size:24px;margin-bottom:0.5rem">🌸 ちいかわキャラ診断 🌸</h2><p style="font-size:14px;color:#888;margin-bottom:1.5rem">あなたはどのキャラクター？<br>10個の質問に答えて診断しよう！</p><p style="font-size:12px;color:#aaa;margin-bottom:1rem">ちいかわ・ハチワレ・うさぎ・ももんが<br>シーサー・ラッコ・くりまんじゅう</p><button class="start-btn" onclick="start()">診断スタート</button></div>';
+</script>
+</body>
+</html>
