@@ -3,31 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="15の質問に答えて、あなたのんぽちゃむ成分を測定する診断クイズ">
+  <meta property="og:title" content="んぽちゃむ度診断">
+  <meta property="og:description" content="15の質問に答えて、あなたのんぽちゃむ成分を測定するちゃむ！">
+  <meta property="og:type" content="website">
   <title>んぽちゃむ度診断</title>
   <style>
-    * {
+    :root {
+      --color-primary: #9FE1CB;
+      --color-primary-dark: #5DCAA5;
+      --color-primary-hover: #7dd4ba;
+      --color-primary-light: #e8f6f2;
+      --color-text: #333;
+      --color-text-dark: #085041;
+      --color-text-muted: #888;
+      --color-text-sub: #aaa;
+      --color-accent: #85BFAE;
+      --color-accent-pink: #d4537e;
+      --color-bg: #f0f8ff;
+      --color-surface: #fff;
+      --color-border: #ddeef8;
+      --color-dot-inactive: #dde8f4;
+      --color-bar-bg: #eef5f0;
+      --radius-card: 18px;
+      --radius-btn: 12px;
+      --radius-badge: 10px;
+      --font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
     body {
-      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
-      background: #f0f8ff;
-      color: #333;
+      font-family: var(--font-family);
+      background: var(--color-bg);
+      color: var(--color-text);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      padding-bottom: calc(1rem + var(--safe-area-bottom));
+      -webkit-text-size-adjust: 100%;
     }
 
-    #app {
+    main {
       width: 100%;
       max-width: 480px;
     }
 
-    #dots {
+    [role="progressbar"] {
       display: flex;
       gap: 7px;
       justify-content: center;
@@ -39,19 +73,21 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #dde8f4;
+      background: var(--color-dot-inactive);
       transition: background 0.3s;
     }
 
-    .dot.done { background: #5DCAA5; }
-    .dot.active { background: #9FE1CB; }
+    .dot[data-state="done"] { background: var(--color-primary-dark); }
+    .dot[data-state="active"] { background: var(--color-primary); }
 
-    #scr { transition: opacity 0.25s; }
+    #scr {
+      transition: opacity var(--transition-normal);
+    }
 
     .card {
-      background: #fff;
-      border: 1px solid #ddeef8;
-      border-radius: 18px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
       padding: 1.25rem;
       margin-bottom: 1rem;
     }
@@ -60,31 +96,38 @@
       width: 100%;
       text-align: left;
       padding: 12px 16px;
-      background: #fff;
-      border: 1px solid #ddeef8;
-      border-radius: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-btn);
       font-size: 14px;
-      color: #333;
+      color: var(--color-text);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all var(--transition-fast);
       font-family: inherit;
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 9px;
+      min-height: 48px;
     }
 
-    .opt-btn:hover {
-      background: #e8f6f2;
-      border-color: #9FE1CB;
+    .opt-btn:hover,
+    .opt-btn:focus-visible {
+      background: var(--color-primary-light);
+      border-color: var(--color-primary);
+    }
+
+    .opt-btn:focus-visible {
+      outline: 2px solid var(--color-primary-dark);
+      outline-offset: 2px;
     }
 
     .abcd {
       min-width: 26px;
       height: 26px;
       border-radius: 50%;
-      background: #9FE1CB;
-      color: #085041;
+      background: var(--color-primary);
+      color: var(--color-text-dark);
       font-size: 12px;
       font-weight: 700;
       display: inline-flex;
@@ -96,46 +139,74 @@
     .start-btn {
       padding: 14px 48px;
       border-radius: 14px;
-      background: #9FE1CB;
-      border: 1.5px solid #5DCAA5;
-      color: #085041;
+      background: var(--color-primary);
+      border: 1.5px solid var(--color-primary-dark);
+      color: var(--color-text-dark);
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       transition: background 0.2s;
+      min-height: 48px;
     }
 
-    .start-btn:hover { background: #7dd4ba; }
+    .start-btn:hover,
+    .start-btn:focus-visible {
+      background: var(--color-primary-hover);
+    }
+
+    .start-btn:focus-visible {
+      outline: 2px solid var(--color-text-dark);
+      outline-offset: 2px;
+    }
 
     .retry-btn {
       width: 100%;
       padding: 12px;
-      border-radius: 12px;
-      background: #fff;
-      border: 1px solid #ddeef8;
+      border-radius: var(--radius-btn);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       font-size: 13px;
-      color: #888;
+      color: var(--color-text-muted);
       cursor: pointer;
       font-family: inherit;
       transition: background 0.2s;
       margin-top: 4px;
+      min-height: 48px;
     }
 
-    .retry-btn:hover { background: #f5f5f5; }
+    .retry-btn:hover,
+    .retry-btn:focus-visible {
+      background: #f5f5f5;
+    }
+
+    .retry-btn:focus-visible {
+      outline: 2px solid var(--color-primary-dark);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div id="dots"></div>
-    <div id="scr"></div>
-  </div>
+  <main aria-label="んぽちゃむ度診断">
+    <div id="dots" role="progressbar" aria-label="進捗" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0"></div>
+    <section id="scr" aria-live="polite"></section>
+  </main>
 
   <script>
     (() => {
       'use strict';
 
-      // 質問データ
+      // ── データ層（関心の分離: データ定義） ──
+
       const QUESTIONS = [
         { q: "欲しい車を買いに行ったら、お金が足りなかった。どうする？", o: [
           { t: "諦めてお金を貯めてからまた来るちゃむ", p: 0 },
@@ -189,7 +260,7 @@
           { t: "すぐ店員さんに返すちゃむ", p: 0 },
           { t: "少し悩んでから返すちゃむ", p: 1 },
           { t: "気づかなかったことにするちゃむ", p: 2 },
-          { t: "通貨はマカロンだから買い物できないちゃむ", p: 3 }
+          { t: "お釣りもマカロンでもらおうとして店員を困らせたちゃむ", p: 3 }
         ]},
         { q: "失敗したとき、どう立ち直る？", o: [
           { t: "原因を分析して次に活かすちゃむ", p: 0 },
@@ -201,7 +272,7 @@
           { t: "すぐ警察に届けるちゃむ", p: 0 },
           { t: "中身を確認して持ち主を探すちゃむ", p: 1 },
           { t: "とりあえずポケットに入れて忘れるちゃむ", p: 2 },
-          { t: "そのままネコババするちゃむ (落とした奴が悪いちゃむ)", p: 3 }
+          { t: "中にマカロンを詰めて交番に届けたちゃむ（善意）", p: 3 }
         ]},
         { q: "道に迷ったときは？", o: [
           { t: "地図アプリで調べるちゃむ", p: 0 },
@@ -229,7 +300,6 @@
         ]}
       ];
 
-      // 診断結果レベル
       const LEVELS = [
         { min: 0, max: 9, label: "きみまろ度100%", color: "#B5D4F4", tc: "#0C447C", comment: "完全にきみまろタイプちゃむ！クールで頼れる存在で、んぽちゃむがいても冷静に対処できるちゃむ。あなたの周りのんぽちゃむたちを守ってあげてほしいちゃむ。" },
         { min: 10, max: 18, label: "んぽちゃむ10%", color: "#EAF3DE", tc: "#27500A", comment: "ほぼしっかり者ちゃむ！たまにのんびりすることはあるけど、基本的には地に足のついたタイプちゃむ。んぽちゃむ成分は少量にとどまってるちゃむ。" },
@@ -239,30 +309,41 @@
         { min: 42, max: 45, label: "んぽちゃむ100%", color: "#9FE1CB", tc: "#04342C", comment: "んぽちゃむそのものちゃむ！！おめでとうちゃむ！！！免許は偽造するし、きみまろに全部やってもらうし、カーディーラーから車を盗むし……きみまろよ、本当にありがとうちゃむ……。" }
       ];
 
-      // 状態
+      const NPOIMG = "npochamu.jpg";
+      const LABELS = 'ABCD';
+
+      // ── 状態管理層 ──
+
       let step = -1;
       let total = 0;
       const MAX = QUESTIONS.length * 3;
 
-      // DOM要素
+      // ── DOM参照 ──
+
       const $dots = document.getElementById('dots');
       const $scr = document.getElementById('scr');
 
-      // 画像パス（外部ファイル）
-      const NPOIMG = "npochamu.jpg";
+      // ── レンダリング層（関心の分離: UI描画） ──
 
-      // ユーティリティ関数
-      const npochamu = (w, h) => `<img src="${NPOIMG}" width="${w}" height="${h}" style="object-fit:contain" alt="んぽちゃむ" />`;
+      const npochamu = (w, h) => `<img src="${NPOIMG}" width="${w}" height="${h}" style="object-fit:contain" alt="んぽちゃむ" loading="lazy" />`;
 
       const updateDots = () => {
         $dots.innerHTML = '';
-        if (step < 0) return;
+        if (step < 0) {
+          $dots.setAttribute('aria-valuenow', '0');
+          return;
+        }
 
+        $dots.setAttribute('aria-valuenow', String(step + 1));
+
+        const frag = document.createDocumentFragment();
         QUESTIONS.forEach((_, i) => {
           const dot = document.createElement('div');
-          dot.className = 'dot' + (i < step ? ' done' : i === step ? ' active' : '');
-          $dots.appendChild(dot);
+          dot.className = 'dot';
+          dot.dataset.state = i < step ? 'done' : i === step ? 'active' : '';
+          frag.appendChild(dot);
         });
+        $dots.appendChild(frag);
       };
 
       const fade = (callback) => {
@@ -273,7 +354,8 @@
         }, 200);
       };
 
-      // 画面表示関数
+      // ── 画面コンポーネント ──
+
       const showIntro = () => {
         step = -1;
         total = 0;
@@ -283,12 +365,12 @@
           $scr.innerHTML = `
             <div style="text-align:center;padding:1rem 0 1.75rem">
               <div style="margin-bottom:0.75rem">${npochamu(110, 132)}</div>
-              <h1 style="font-size:22px;font-weight:700;color:#333;margin-bottom:0.4rem">んぽちゃむ度診断</h1>
-              <p style="font-size:13px;color:#85BFAE;font-weight:600;letter-spacing:0.08em;margin-bottom:1rem">— ヨーグルトの妖精診断 —</p>
-              <p style="font-size:14px;color:#888;line-height:1.8;margin-bottom:1.75rem">
-                15の質問に答えて、あなたの<br><b style="color:#5DCAA5">んぽちゃむ成分</b>を測定するちゃむ！
+              <h1 style="font-size:22px;font-weight:700;color:var(--color-text);margin-bottom:0.4rem">んぽちゃむ度診断</h1>
+              <p style="font-size:13px;color:var(--color-accent);font-weight:600;letter-spacing:0.08em;margin-bottom:1rem">— ヨーグルトの妖精診断 —</p>
+              <p style="font-size:14px;color:var(--color-text-muted);line-height:1.8;margin-bottom:1.75rem">
+                15の質問に答えて、あなたの<br><strong style="color:var(--color-primary-dark)">んぽちゃむ成分</strong>を測定するちゃむ！
               </p>
-              <button class="start-btn" id="startBtn">はじめるちゃむ！</button>
+              <button class="start-btn" id="startBtn" type="button">はじめるちゃむ！</button>
             </div>
           `;
           document.getElementById('startBtn').addEventListener('click', startQuiz);
@@ -307,23 +389,25 @@
 
         fade(() => {
           const optionsHtml = q.o.map((opt, i) => `
-            <button class="opt-btn" data-points="${opt.p}">
-              <span class="abcd">${'ABCD'[i]}</span>${opt.t}
+            <button class="opt-btn" type="button" data-points="${opt.p}" aria-label="${LABELS[i]}: ${opt.t}">
+              <span class="abcd" aria-hidden="true">${LABELS[i]}</span>${opt.t}
             </button>
           `).join('');
 
           $scr.innerHTML = `
             <div style="text-align:center;margin-bottom:0.75rem">
-              <span style="font-size:12px;color:#aaa">${step + 1} / ${QUESTIONS.length}</span>
+              <span style="font-size:12px;color:var(--color-text-sub)" aria-label="質問${step + 1}（全${QUESTIONS.length}問中）">${step + 1} / ${QUESTIONS.length}</span>
             </div>
-            <div class="card" style="text-align:center">
+            <div class="card" style="text-align:center" role="heading" aria-level="2">
               <p style="font-size:16px;font-weight:600;color:#444;line-height:1.7;margin:0">${q.q}</p>
             </div>
-            ${optionsHtml}
+            <fieldset style="border:none;padding:0;margin:0">
+              <legend class="visually-hidden">回答を選択してください</legend>
+              ${optionsHtml}
+            </fieldset>
           `;
 
-          // イベントリスナーを追加
-          document.querySelectorAll('.opt-btn').forEach(btn => {
+          $scr.querySelectorAll('.opt-btn').forEach(btn => {
             btn.addEventListener('click', () => answer(parseInt(btn.dataset.points)));
           });
         });
@@ -345,32 +429,35 @@
         const barW = Math.max(2, pct);
 
         $dots.innerHTML = '';
+        $dots.removeAttribute('aria-valuenow');
 
         fade(() => {
           $scr.innerHTML = `
-            <div style="text-align:center;padding-top:0.5rem;margin-bottom:1.25rem">
-              <p style="font-size:12px;color:#aaa;margin-bottom:0.5rem;letter-spacing:0.1em">診断結果</p>
-              <div style="margin:0 auto 0.75rem;display:inline-block">${npochamu(150, 150)}</div>
-              <p style="font-size:36px;font-weight:800;color:${level.tc};margin-bottom:0.25rem">${pct}%</p>
-              <span style="display:inline-block;background:${level.color};color:${level.tc};font-size:14px;font-weight:700;padding:6px 18px;border-radius:10px">${level.label}</span>
-            </div>
-            <div style="background:#fff;border:1px solid #ddeef8;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <span style="font-size:12px;color:#5DCAA5;font-weight:600">きみまろ</span>
-                <span style="font-size:12px;color:#d4537e;font-weight:600">んぽちゃむ</span>
+            <article aria-label="診断結果">
+              <div style="text-align:center;padding-top:0.5rem;margin-bottom:1.25rem">
+                <p style="font-size:12px;color:var(--color-text-sub);margin-bottom:0.5rem;letter-spacing:0.1em">診断結果</p>
+                <div style="margin:0 auto 0.75rem;display:inline-block">${npochamu(150, 150)}</div>
+                <p style="font-size:36px;font-weight:800;color:${level.tc};margin-bottom:0.25rem" aria-label="んぽちゃむ度${pct}パーセント">${pct}%</p>
+                <span style="display:inline-block;background:${level.color};color:${level.tc};font-size:14px;font-weight:700;padding:6px 18px;border-radius:var(--radius-badge)">${level.label}</span>
               </div>
-              <div style="height:12px;background:#eef5f0;border-radius:6px;overflow:hidden;margin-bottom:12px">
-                <div style="height:100%;width:${barW}%;background:linear-gradient(90deg,#9FE1CB,#d4537e);border-radius:6px;transition:width 0.8s ease"></div>
+              <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-size:12px;color:var(--color-primary-dark);font-weight:600">きみまろ</span>
+                  <span style="font-size:12px;color:var(--color-accent-pink);font-weight:600">んぽちゃむ</span>
+                </div>
+                <div style="height:12px;background:var(--color-bar-bg);border-radius:6px;overflow:hidden;margin-bottom:12px" role="meter" aria-label="んぽちゃむ度メーター" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+                  <div style="height:100%;width:${barW}%;background:linear-gradient(90deg,var(--color-primary),var(--color-accent-pink));border-radius:6px;transition:width 0.8s ease"></div>
+                </div>
+                <p style="font-size:14px;color:#555;line-height:1.8;margin:0">${level.comment}</p>
               </div>
-              <p style="font-size:14px;color:#555;line-height:1.8;margin:0">${level.comment}</p>
-            </div>
-            <button class="retry-btn" id="retryBtn">もう一度測定するちゃむ</button>
+              <button class="retry-btn" id="retryBtn" type="button">もう一度測定するちゃむ</button>
+            </article>
           `;
           document.getElementById('retryBtn').addEventListener('click', showIntro);
         });
       };
 
-      // 初期化
+      // ── 初期化 ──
       showIntro();
     })();
   </script>
